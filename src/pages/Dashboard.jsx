@@ -128,8 +128,10 @@ export const Dashboard = () => {
             <div className="table-quick-grid">
               {tables.map((table) => (
                 <div key={table.id} className={`table-badge-item status-${table.status}`}>
-                  <span className="table-badge-name">{table.name}</span>
-                  <span className="table-badge-cap">{table.capacity} Seats</span>
+                  <span className="table-badge-name">
+                    {table.name} {table.isMerged ? '🔗' : ''}
+                  </span>
+                  <span className="table-badge-cap">{table.chairs || table.capacity || 4} Seats</span>
                   <span className="table-badge-state">{table.status}</span>
                 </div>
               ))}

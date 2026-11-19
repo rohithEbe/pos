@@ -15,7 +15,9 @@ import {
   CheckCircle,
   Receipt,
   User,
-  Armchair
+  Armchair,
+  GitMerge,
+  RefreshCw
 } from 'lucide-react';
 import { usePOS } from '../context/POSContext';
 import Header from '../components/Header';
@@ -49,8 +51,9 @@ export const POS = () => {
     setSelectedTable,
     orderType,
     setOrderType,
-    tables,
-    checkoutOrder
+    billingTables,
+    checkoutOrder,
+    releaseTable
   } = usePOS();
 
   const [activeCategory, setActiveCategory] = useState('all');
@@ -70,6 +73,11 @@ export const POS = () => {
     });
   }, [products, activeCategory, searchQuery]);
 
+  // Current selected table info
+  const currentTableObj = useMemo(() => {
+    return billingTables.find((t) => t.name === selectedTable) || null;
+  }, [billingTables, selectedTable]);
+
   const handleCheckout = (paymentMethod) => {
     if (cart.length === 0) return;
     const placedOrder = checkoutOrder(paymentMethod, customerName);
@@ -77,6 +85,13 @@ export const POS = () => {
       setReceiptOrder(placedOrder);
       setIsReceiptOpen(true);
     }
+  };
+
+  const handleFinishAndRelease = () => {
+    if (receiptOrder && receiptOrder.type === 'Dine In' && receiptOrder.table) {
+      releaseTable(receiptOrder.table);
+    }
+    setIsReceiptOpen(false);
   };
 
   return (
@@ -178,12 +193,25 @@ export const POS = () => {
                 value={selectedTable}
                 onChange={(e) => setSelectedTable(e.target.value)}
               >
-                {tables.map((t) => (
+                {billingTables.map((t) => (
                   <option key={t.id} value={t.name}>
-                    {t.name} ({t.capacity} Seats - {t.status})
+                    {t.isMerged
+                      ? `🔗 ${t.name} (Merged: ${t.chairs} Chairs)`
+                      : `${t.name} (${t.chairs} Chairs)`}{' '}
+                    - {t.status}
                   </option>
                 ))}
               </select>
+            </div>
+          )}
+
+          {/* Merged Table Seating Alert Banner */}
+          {orderType === 'Dine In' && currentTableObj?.isMerged && (
+            <div className="pos-merged-table-indicator">
+              <GitMerge size={14} />
+              <span>
+                <strong>Merged Table ({currentTableObj.name}):</strong> {currentTableObj.chairs} Total Seats (One Unified Bill)
+              </span>
             </div>
           )}
         </div>
@@ -274,19 +302,30 @@ export const POS = () => {
         </div>
       </div>
 
-      {/* Bill Receipt Modal */}
+      {/* Bill Receipt Modal with Release Table Workflow */}
       <Modal
         isOpen={isReceiptOpen}
         onClose={() => setIsReceiptOpen(false)}
         title="Payment Successful & Order Receipt"
-        maxWidth="440px"
+        maxWidth="460px"
         footer={
-          <button
-            className="btn-primary"
-            onClick={() => setIsReceiptOpen(false)}
-          >
-            Done & Print Receipt
-          </button>
+          <div className="receipt-modal-actions">
+            {receiptOrder?.type === 'Dine In' && (
+              <button
+                className="btn-release-table-modal"
+                onClick={handleFinishAndRelease}
+              >
+                <RefreshCw size={15} />
+                <span>Release Table ({receiptOrder.table})</span>
+              </button>
+            )}
+            <button
+              className="btn-primary"
+              onClick={() => setIsReceiptOpen(false)}
+            >
+              Done & Keep Occupied
+            </button>
+          </div>
         }
       >
         {receiptOrder && (
@@ -294,7 +333,7 @@ export const POS = () => {
             <div className="receipt-success-badge">
               <CheckCircle size={36} color="#10b981" />
               <h4>Order Received #{receiptOrder.id}</h4>
-              <p>Kitchen ticket generated successfully</p>
+              <p>Kitchen ticket generated & payment settled</p>
             </div>
 
             <div className="receipt-details">
@@ -303,8 +342,10 @@ export const POS = () => {
                 <strong>{receiptOrder.customer}</strong>
               </div>
               <div className="receipt-info-line">
-                <span>Location:</span>
-                <strong>{receiptOrder.table} ({receiptOrder.type})</strong>
+                <span>Table / Target:</span>
+                <strong className="table-highlight-receipt">
+                  {receiptOrder.table} ({receiptOrder.type})
+                </strong>
               </div>
               <div className="receipt-info-line">
                 <span>Time & Date:</span>
