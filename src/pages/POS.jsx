@@ -101,30 +101,32 @@ export const POS = () => {
         <Header title="Point of Sale" subtitle="Order booking and touch-screen billing station" />
 
         <div className="pos-menu-content">
-          {/* Top Bar: Search & Categories */}
-          <div className="pos-search-row">
-            <SearchBar
-              value={searchQuery}
-              onChange={setSearchQuery}
-              placeholder="Search food by name, ingredient, category..."
-            />
-          </div>
+          {/* Top Bar: Sticky Controls for Search & Categories */}
+          <div className="pos-menu-sticky-controls">
+            <div className="pos-search-row">
+              <SearchBar
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search food by name, ingredient, category..."
+              />
+            </div>
 
-          <div className="category-scroll-bar">
-            {categories.map((cat) => {
-              const Icon = categoryIcons[cat.id] || UtensilsCrossed;
-              const isActive = activeCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  className={`category-pill ${isActive ? 'active' : ''}`}
-                  onClick={() => setActiveCategory(cat.id)}
-                >
-                  <Icon size={18} />
-                  <span>{cat.name}</span>
-                </button>
-              );
-            })}
+            <div className="category-scroll-bar">
+              {categories.map((cat) => {
+                const Icon = categoryIcons[cat.id] || UtensilsCrossed;
+                const isActive = activeCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    className={`category-pill ${isActive ? 'active' : ''}`}
+                    onClick={() => setActiveCategory(cat.id)}
+                  >
+                    <Icon size={18} />
+                    <span>{cat.name}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Products Grid */}
